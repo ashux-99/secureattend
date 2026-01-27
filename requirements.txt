@@ -1,0 +1,7 @@
+PySide6
+cryptography
+qrcode
+opencv-python
+Pillow
+pytest
+flake8
