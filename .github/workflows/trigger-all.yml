@@ -1,0 +1,17 @@
+name: Trigger All Workflows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop, workflow-dev ]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger workflow run
+      run: |
+        echo "This workflow triggers other workflows to run"
+        echo "All workflows configured for this repository should now be active"
+        echo "Check the Actions tab to see workflow runs"
