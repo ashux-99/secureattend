@@ -1,0 +1,21 @@
+name: Auto Merge Dependencies
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Auto-merge Dependencies
+      uses: fastify/github-action-merge-dependabot@v3
+      with:
+        target: minor
+        github-token: ${{ secrets.GITHUB_TOKEN }}
