@@ -1,50 +1,49 @@
 # GitHub Actions Workflows
 
-This directory contains all GitHub Actions workflows for SecureAttend.
+This directory contains all GitHub Actions workflows for SecureAttend, organized by category.
 
-## Workflows
+## Core CI/CD Workflows
 
-### CI/CD Workflows
-- **ci.yml** - Main CI pipeline with testing and linting
-- **test.yml** - Comprehensive cross-platform testing
-- **lint.yml** - Code quality checks with multiple linters
-- **docker.yml** - Docker image building and testing
-- **docker-build.yml** - Docker build and push to registry
-- **build-package.yml** - Python package building
-
-### Release Workflows
+- **ci.yml** - Main CI pipeline with linting, testing, and build verification
+- **docker-build.yml** - Docker image building, testing, and registry push
 - **release.yml** - Automated release creation with package building
 - **publish-pypi.yml** - PyPI package publishing
-- **notify.yml** - Release notifications
 
-### Security Workflows
+## Security Workflows
+
 - **codeql.yml** - CodeQL security analysis
 - **security.yml** - Trivy vulnerability scanning
 - **dependency-review.yml** - Dependency security review
 
-### Maintenance Workflows
+## Quality Assurance Workflows
+
+- **coverage.yml** - Coverage reporting and badge generation
+- **performance.yml** - Performance benchmarking
+- **validate-pr.yml** - PR validation (title, branch, conflicts)
+- **check-commits.yml** - Commit message format checking
+
+## Maintenance Workflows
+
 - **stale.yml** - Stale issue/PR management
 - **label.yml** - Auto-labeling for issues and PRs
 - **sync-branches.yml** - Branch synchronization
 - **update-dependencies.yml** - Automated dependency updates
 - **backup.yml** - Repository backups
+- **auto-merge.yml** - Auto-merge dependency PRs
 
-### Quality Assurance Workflows
-- **coverage.yml** - Coverage reporting
-- **performance.yml** - Performance benchmarking
-- **validate-pr.yml** - PR validation
-- **check-commits.yml** - Commit message format checking
-- **changelog.yml** - Automated changelog generation
+## Documentation & Release
+
 - **docs.yml** - Documentation building
-- **matrix-test.yml** - Matrix testing across platforms
+- **changelog.yml** - Automated changelog generation
+- **notify.yml** - Release notifications
+- **build-package.yml** - Package building with artifacts
 
 ## Workflow Triggers
 
-Most workflows trigger on:
-- Push to main/develop branches
-- Pull requests
-- Scheduled runs (cron)
-- Manual dispatch (workflow_dispatch)
+- **Push events**: Most workflows trigger on push to main/develop
+- **Pull requests**: CI, security, and validation workflows
+- **Scheduled**: Backup, stale management, security scans (weekly/daily)
+- **Manual dispatch**: Backup, docs, build-package, docker-build, publish-pypi
 
 ## Permissions
 
