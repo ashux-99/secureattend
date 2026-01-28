@@ -1,0 +1,32 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main, develop, docker-dev ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: secureattend:latest
+        cache-from: type=registry,ref=secureattend:buildcache
+        cache-to: type=registry,ref=secureattend:buildcache,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm secureattend:latest python -c "from app.gui.main_window import run_app; print('Docker image works')"
