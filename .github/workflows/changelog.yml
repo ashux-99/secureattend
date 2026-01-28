@@ -1,0 +1,26 @@
+name: Update Changelog
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [closed]
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Update CHANGELOG
+      uses: metcalfc/changelog-generator@v5.0.1
+      with:
+        myToken: ${{ secrets.GITHUB_TOKEN }}
+        skipPrs: false
+        skipCommits: false
+        skipAuthors: false

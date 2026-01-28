@@ -1,0 +1,35 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install pip-tools
+      run: |
+        pip install pip-tools
+    
+    - name: Update dependencies
+      run: |
+        pip-compile --upgrade requirements.in || true
+        pip-compile --upgrade requirements-dev.in || true
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        commit-message: 'chore: update dependencies'
+        title: 'Automated dependency updates'
+        body: 'This PR updates project dependencies to their latest versions.'
+        branch: automated-dependency-updates
