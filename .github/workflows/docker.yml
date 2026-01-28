@@ -23,10 +23,23 @@ jobs:
       with:
         context: .
         push: false
-        tags: secureattend:latest
+        tags: secureattend:latest,secureattend:${{ github.sha }}
         cache-from: type=registry,ref=secureattend:buildcache
         cache-to: type=registry,ref=secureattend:buildcache,mode=max
+        platforms: linux/amd64,linux/arm64
     
     - name: Test Docker image
       run: |
         docker run --rm secureattend:latest python -c "from app.gui.main_window import run_app; print('Docker image works')"
+    
+    - name: Scan Docker image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: secureattend:latest
+        format: 'sarif'
+        output: 'trivy-docker.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-docker.sarif'

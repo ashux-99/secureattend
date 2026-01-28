@@ -1,0 +1,34 @@
+# Label configuration for auto-labeling
+
+app/crypto/**:
+  - crypto
+  - security
+
+app/gui/**:
+  - gui
+  - frontend
+
+app/storage/**:
+  - storage
+  - database
+
+tests/**:
+  - tests
+  - testing
+
+.github/workflows/**:
+  - ci/cd
+  - workflows
+
+docs/**:
+  - documentation
+
+Dockerfile*:
+  - docker
+  - deployment
+
+requirements*.txt:
+  - dependencies
+
+*.md:
+  - documentation

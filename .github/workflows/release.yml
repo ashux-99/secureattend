@@ -5,12 +5,17 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -21,17 +26,63 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install build twine
+    
+    - name: Build package
+      run: |
+        python -m build
     
     - name: Create release archive
       run: |
         mkdir -p dist
-        tar -czf dist/secureattend-${{ github.ref_name }}.tar.gz .
-        zip -r dist/secureattend-${{ github.ref_name }}.zip . -x "*.git*"
+        tar -czf dist/secureattend-${{ github.ref_name }}.tar.gz . --exclude='.git' --exclude='__pycache__' --exclude='*.pyc'
+        zip -r dist/secureattend-${{ github.ref_name }}.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc"
+    
+    - name: Read version from VERSION file
+      id: version
+      run: |
+        if [ -f VERSION ]; then
+          echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Read CHANGELOG
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract changelog entry for this version
+          VERSION="${{ steps.version.outputs.version }}"
+          awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | head -n -1 > release_notes.txt || cat CHANGELOG.md > release_notes.txt
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "notes=Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
     
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/*
+        files: |
+          dist/*
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## SecureAttend ${{ github.ref_name }}
+          
+          ${{ steps.changelog.outputs.notes }}
+          
+          ### Installation
+          
+          ```bash
+          pip install dist/secureattend-*.whl
+          ```
+          
+          ### Downloads
+          
+          - Source code archive (tar.gz)
+          - Source code archive (zip)
+          - Python wheel package
         draft: false
         prerelease: false
       env:
