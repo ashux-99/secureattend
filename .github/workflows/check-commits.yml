@@ -1,0 +1,24 @@
+name: Check Commits
+
+on:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check commit message format
+      run: |
+        git log --oneline ${{ github.event.before }}..${{ github.sha }} | while read commit; do
+          if ! echo "$commit" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|workflow|ci|build|perf)(\(.+\))?: .+'; then
+            echo "Invalid commit message format: $commit"
+            echo "Commit messages should follow: type(scope): description"
+            exit 1
+          fi
+        done || true
