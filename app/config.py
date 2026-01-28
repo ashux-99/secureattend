@@ -14,6 +14,10 @@ DATA_DIR.mkdir(exist_ok=True)
 KEYS_DIR = DATA_DIR / "keys"
 KEYS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Logs directory
+LOGS_DIR = DATA_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
 # Default subjects
 DEFAULT_SUBJECTS = [
     "Mathematics",
@@ -43,3 +47,7 @@ QR_BORDER = 4
 # Cryptographic settings
 RSA_KEY_SIZE = 2048
 RSA_PUBLIC_EXPONENT = 65537
+
+# Logging settings
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = LOGS_DIR / "secureattend.log"
