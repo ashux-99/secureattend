@@ -1,15 +1,16 @@
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout,
     QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem,
-    QLineEdit, QTextEdit, QComboBox, QMessageBox, QHeaderView
+    QLineEdit, QTextEdit, QComboBox, QMessageBox, QHeaderView, QMenuBar, QMenu
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QFont, QPixmap, QAction
 import sys
 from datetime import datetime
 from app.crypto.qr_generator import generate_signed_qr
 from app.crypto.qr_verifier import verify_qr_signature
 from app.crypto.keys import KeyManager
+from app.gui.about_dialog import AboutDialog
 
 
 class StudentViewTab(QWidget):
@@ -353,6 +354,15 @@ def run_app() -> None:
     window = QMainWindow()
     window.setWindowTitle("SecureAttend - PKI-Based Attendance System")
     window.setMinimumSize(900, 700)
+    
+    # Create menu bar
+    menubar = window.menuBar()
+    
+    # Help menu
+    help_menu = menubar.addMenu("Help")
+    about_action = QAction("About SecureAttend", window)
+    about_action.triggered.connect(lambda: AboutDialog(window).exec())
+    help_menu.addAction(about_action)
     
     # Create tab widget
     tabs = QTabWidget()
