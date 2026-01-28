@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  secureattend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: secureattend:latest
+    container_name: secureattend-app
+    environment:
+      - QT_QPA_PLATFORM=offscreen
+      - DISPLAY=:99
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
