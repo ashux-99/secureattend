@@ -1,0 +1,28 @@
+name: Sync Branches
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Sync develop to feature branches
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        for branch in crypto-dev gui-dev docker-dev workflow-dev; do
+          git checkout $branch || git checkout -b $branch
+          git merge develop --no-edit || true
+          git push origin $branch || true
+        done
