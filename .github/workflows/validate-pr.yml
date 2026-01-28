@@ -1,0 +1,32 @@
+name: Validate Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check PR title format
+      run: |
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        if ! echo "$PR_TITLE" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|workflow|ci|build|perf)(\(.+\))?: .+'; then
+          echo "::error::PR title must follow format: type(scope): description"
+          exit 1
+        fi
+    
+    - name: Check for merge conflicts
+      run: |
+        git fetch origin ${{ github.event.pull_request.base.ref }}
+        git merge-base HEAD origin/${{ github.event.pull_request.base.ref }} > /dev/null || exit 1
+    
+    - name: Validate branch name
+      run: |
+        BRANCH="${{ github.event.pull_request.head.ref }}"
+        if [[ ! "$BRANCH" =~ ^(feature|fix|hotfix|release|workflow)/.+$ ]] && [[ "$BRANCH" != "develop" ]]; then
+          echo "::warning::Branch name doesn't follow convention (feature/, fix/, etc.)"
+        fi
