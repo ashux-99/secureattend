@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies and development tools
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libxcb-xinerama0 \
+    libxcb-cursor0 \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies including dev tools
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir black mypy pylint
+
+# Copy application code
+COPY . .
+
+# Development mode - mount volumes for live editing
+CMD ["python", "main.py"]
