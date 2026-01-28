@@ -62,11 +62,19 @@ docker run -it secureattend
 docker-compose up
 ```
 
+### Generate Keys
+
+```bash
+python scripts/generate_keys.py
+```
+
 ## Architecture
 
 - `app/crypto/`: PKI-based cryptographic functions
 - `app/gui/`: PySide6 GUI components
 - `app/models/`: Data models
+- `app/storage/`: File-based storage and export
+- `app/utils/`: Utility functions
 - `tests/`: Unit tests
 
 ## Development
@@ -81,6 +89,16 @@ pytest tests/
 
 ```bash
 flake8 .
+```
+
+### Using Make
+
+```bash
+make install    # Install dependencies
+make test       # Run tests
+make lint       # Run linter
+make run        # Run application
+make clean      # Clean build artifacts
 ```
 
 ## License
