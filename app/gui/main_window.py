@@ -3,11 +3,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem,
     QLineEdit, QTextEdit, QComboBox, QMessageBox, QHeaderView
 )
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont, QPixmap, QImage
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QPixmap
 import sys
-from typing import List, Dict, Optional
 from datetime import datetime
+from app.crypto.qr_generator import generate_signed_qr
+from app.crypto.qr_verifier import verify_qr_signature
+from app.crypto.keys import KeyManager
 
 
 class StudentViewTab(QWidget):
@@ -15,6 +17,7 @@ class StudentViewTab(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.key_manager = KeyManager()
         self.subjects = [
             "Mathematics", "Physics", "Chemistry", "Biology", "Computer Science",
             "English", "History", "Geography", "Economics", "Physical Education"
@@ -80,17 +83,16 @@ class StudentViewTab(QWidget):
         layout.addWidget(self.generate_btn)
         
         # QR Code display area
-        qr_label = QLabel("QR Code will appear here")
-        qr_label.setAlignment(Qt.AlignCenter)
-        qr_label.setMinimumHeight(200)
-        qr_label.setStyleSheet("""
+        self.qr_display = QLabel("QR Code will appear here")
+        self.qr_display.setAlignment(Qt.AlignCenter)
+        self.qr_display.setMinimumHeight(250)
+        self.qr_display.setStyleSheet("""
             QLabel {
                 border: 2px dashed #ccc;
                 border-radius: 5px;
                 background-color: #f9f9f9;
             }
         """)
-        self.qr_display = qr_label
         layout.addWidget(self.qr_display)
         
         # Attendance table
@@ -129,28 +131,36 @@ class StudentViewTab(QWidget):
             QMessageBox.warning(self, "Input Required", "Please enter your Student ID.")
             return
         
-        # In a real implementation, this would generate a PKI-signed QR code
-        # For now, we'll create a placeholder
-        qr_data = f"STUDENT:{student_id}|SUBJECT:{subject}|TIME:{datetime.now().isoformat()}"
-        
-        self.qr_display.setText(f"QR Code Generated\n\n{qr_data}\n\n(QR image will be displayed here)")
-        self.qr_display.setStyleSheet("""
-            QLabel {
-                border: 2px solid #4CAF50;
-                border-radius: 5px;
-                background-color: #f0f8f0;
-                padding: 10px;
-            }
-        """)
-        
-        # Update attendance table (mock data)
-        row = self.attendance_table.rowCount()
-        self.attendance_table.insertRow(row)
-        self.attendance_table.setItem(row, 0, QTableWidgetItem(subject))
-        self.attendance_table.setItem(row, 1, QTableWidgetItem(datetime.now().strftime("%Y-%m-%d %H:%M")))
-        self.attendance_table.setItem(row, 2, QTableWidgetItem("Present"))
-        
-        QMessageBox.information(self, "Success", f"QR code generated for {subject}!")
+        try:
+            # Generate PKI-signed QR code
+            qr_data, qr_image = generate_signed_qr(student_id, subject, self.key_manager)
+            
+            # Convert PIL image to QPixmap
+            from PIL.ImageQt import ImageQt
+            qimg = ImageQt(qr_image)
+            pixmap = QPixmap.fromImage(qimg)
+            scaled_pixmap = pixmap.scaled(250, 250, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            
+            self.qr_display.setPixmap(scaled_pixmap)
+            self.qr_display.setStyleSheet("""
+                QLabel {
+                    border: 2px solid #4CAF50;
+                    border-radius: 5px;
+                    background-color: #f0f8f0;
+                    padding: 10px;
+                }
+            """)
+            
+            # Update attendance table
+            row = self.attendance_table.rowCount()
+            self.attendance_table.insertRow(row)
+            self.attendance_table.setItem(row, 0, QTableWidgetItem(subject))
+            self.attendance_table.setItem(row, 1, QTableWidgetItem(datetime.now().strftime("%Y-%m-%d %H:%M")))
+            self.attendance_table.setItem(row, 2, QTableWidgetItem("Present"))
+            
+            QMessageBox.information(self, "Success", f"PKI-signed QR code generated for {subject}!")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate QR code: {str(e)}")
 
 
 class QRDecoderTab(QWidget):
@@ -158,6 +168,7 @@ class QRDecoderTab(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.key_manager = KeyManager()
         self.init_ui()
     
     def init_ui(self):
@@ -186,7 +197,7 @@ class QRDecoderTab(QWidget):
         layout.addWidget(input_label)
         
         self.qr_input = QTextEdit()
-        self.qr_input.setPlaceholderText("Paste QR code data here...")
+        self.qr_input.setPlaceholderText("Paste QR code data here (JSON format)...")
         self.qr_input.setMinimumHeight(100)
         self.qr_input.setStyleSheet("""
             QTextEdit {
@@ -260,37 +271,35 @@ class QRDecoderTab(QWidget):
             QMessageBox.warning(self, "Input Required", "Please enter QR code data to decode.")
             return
         
-        # Parse QR data (simplified - real implementation would verify PKI signature)
-        try:
-            if qr_data.startswith("STUDENT:"):
-                parts = qr_data.split("|")
-                student_id = parts[0].split(":")[1] if len(parts) > 0 else "Unknown"
-                subject = parts[1].split(":")[1] if len(parts) > 1 else "Unknown"
-                timestamp = parts[2].split(":")[1] if len(parts) > 2 else "Unknown"
-                
-                result_text = f"""Student ID: {student_id}
-Subject: {subject}
-Timestamp: {timestamp}
+        # Verify PKI signature
+        is_valid, attendance_data, error_msg = verify_qr_signature(qr_data, self.key_manager)
+        
+        if is_valid and attendance_data:
+            result_text = f"""Student ID: {attendance_data.get('student_id', 'Unknown')}
+Subject: {attendance_data.get('subject', 'Unknown')}
+Timestamp: {attendance_data.get('timestamp', 'Unknown')}
 
-Verification Status: ✓ Valid (PKI signature verification would occur here)
+Verification Status: ✓ Valid PKI Signature
+The QR code has been cryptographically verified and is authentic.
 """
-                self.results_display.setText(result_text)
-                self.status_label.setText("✓ QR Code Verified Successfully")
-                self.status_label.setStyleSheet("""
-                    QLabel {
-                        background-color: #d4edda;
-                        color: #155724;
-                        border: 1px solid #c3e6cb;
-                        border-radius: 5px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-weight: bold;
-                    }
-                """)
-            else:
-                raise ValueError("Invalid QR format")
-        except Exception as e:
-            self.results_display.setText(f"Error decoding QR code: {str(e)}")
+            self.results_display.setText(result_text)
+            self.status_label.setText("✓ QR Code Verified Successfully")
+            self.status_label.setStyleSheet("""
+                QLabel {
+                    background-color: #d4edda;
+                    color: #155724;
+                    border: 1px solid #c3e6cb;
+                    border-radius: 5px;
+                    padding: 10px;
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+            """)
+        else:
+            error_display = f"Verification Failed\n\nError: {error_msg or 'Unknown error'}"
+            if attendance_data:
+                error_display += f"\n\nData found:\nStudent ID: {attendance_data.get('student_id', 'Unknown')}\nSubject: {attendance_data.get('subject', 'Unknown')}"
+            self.results_display.setText(error_display)
             self.status_label.setText("✗ QR Code Verification Failed")
             self.status_label.setStyleSheet("""
                 QLabel {
